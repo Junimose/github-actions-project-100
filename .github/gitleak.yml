@@ -1,0 +1,15 @@
+name: Reusable Gitleaks Scan
+
+on:
+  workflow_call:
+
+jobs:
+  gitleaks-scan:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gitleaks Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
