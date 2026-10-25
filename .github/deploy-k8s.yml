@@ -1,0 +1,34 @@
+name: Reusable Deploy to K8s
+
+on:
+  workflow_call:
+    secrets:
+      KUBE_CONFIG:
+        required: true
+      DOCKER_USERNAME:
+        required: true
+
+jobs:
+  deploy-k8s:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Update Deployment Image
+        run: |
+          kubectl set image deployment/django-ecommerce \
+            django-ecommerce=${{ secrets.DOCKER_USERNAME }}/django-ecommerce:${{ github.sha }}
+
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/django-ecommerce
+          kubectl get pods -l app=django-ecommerce
