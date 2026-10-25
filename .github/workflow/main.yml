@@ -1,0 +1,43 @@
+name: Django Ecommerce CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  django:
+    uses: ./.github/workflows/django.yml
+
+  trivy:
+    uses: ./.github/workflows/trivy-security-scan.yml
+
+  gitleaks:
+    uses: ./.github/workflows/gitleaks.yml
+
+  code-quality:
+    uses: ./.github/workflows/code-quality.yml
+
+  dep-check:
+    uses: ./.github/workflows/dependency-check.yml
+
+  docker-build:
+    uses: ./.github/workflows/docker-build.yml
+
+  pytest:
+    uses: ./.github/workflows/pytest.yml
+
+  docker-push:
+    needs: [pytest, dep-check, code-quality, django]
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/docker-build-push.yml
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  deploy-k8s:
+    needs: [docker-push]
+    uses: ./.github/workflows/deploy-k8s.yml
+    secrets:
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
